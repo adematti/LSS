@@ -123,7 +123,7 @@ def get_subset(tarbit,tp,night,tile,coaddir,exposures,nspec=2,md='all'):
             tn = Table.read(coaddir+'/'+night+'/zbest-'+str(specs[i])+'-'+str(tile)+'-'+night+'.fits',hdu='ZBEST')
             tnf = Table.read(coaddir+'/'+night+'/coadd-'+str(specs[i])+'-'+str(tile)+'-'+night+'.fits',hdu='FIBERMAP')  
             tspec = vstack([tspec,tn], metadata_conflicts='silent')                      
-            tf = vstack([tf,tnf])
+            tf = vstack([tf,tnf], metadata_conflicts='silent')
             zfm = Table.read(coaddir+'/'+night+'/zbest-'+str(specs[i])+'-'+str(tile)+'-'+night+'.fits',hdu='FIBERMAP')
             exps = np.unique(zfm['EXPID'])
             bd = []
@@ -156,7 +156,7 @@ def get_subset(tarbit,tp,night,tile,coaddir,exposures,nspec=2,md='all'):
             #print(np.min(rdt),np.max(rdt)) 
         if md == 'all':
             tspec = join(tspec,tf,keys=['TARGETID'], metadata_conflicts='silent') #don't need the fibermap info again for horizontal
-        td = Table([bdt,rdt,zdt,tid],names=('B_DEPTH','R_DEPTH','Z_DEPTH','TARGETID'), metadata_conflicts='silent')
+        td = Table([bdt,rdt,zdt,tid],names=('B_DEPTH','R_DEPTH','Z_DEPTH','TARGETID'))
         tspec = join(tspec,td,keys=['TARGETID'], metadata_conflicts='silent')
         wtype = ((tspec[tp] & 2**tarbit) > 0)
         print(str(len(tspec))+' total entries '+str(len(tspec[wtype]))+' that are requested type entries with '+str(len(np.unique(tspec[wtype]['TARGETID'])))+' unique target IDs')
