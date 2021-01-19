@@ -51,6 +51,7 @@ def comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outf):
     #print(tt.columns)
     zbest_all = []
     zbest_all.append(tspect)
+    print(tspect['subset'].dtype)
 
     for night in subsets:
         if len(night) > 0 and night != nu:
