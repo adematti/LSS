@@ -21,7 +21,7 @@ def comb_subset_vert(tarbit,tp,subsets,tile,coaddir,exposures,outf):
                     tspect = tspec
                     ss = 1
                 else:
-                    tspect = vstack([tspect,tspec])
+                    tspect = vstack([tspect,tspec], metadata_conflicts='silent')
                 print('there are now '+str(len(tspect)) +' entries with '+str(len(np.unique(tspect['TARGETID'])))+' unique target IDs')    
                     
     if ss == 1:
@@ -75,7 +75,7 @@ def comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outf):
             subsets[column][:, subset_index] = subset[column]
     n_subset = len(subsets['Z'][0])
     print(len(subsets), len(np.unique(subsets['TARGETID'])))        
-    tspect.write(outf,format='fits', overwrite=True) 
+    subsets.write(outf,format='fits', overwrite=True) 
     print('wrote to '+outf)
     return True
 
