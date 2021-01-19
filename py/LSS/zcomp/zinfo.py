@@ -2,7 +2,6 @@ from astropy.table import Table,join,vstack
 import numpy as np
 import fitsio
 
-'test'
 
 def comb_subset_vert(tarbit,tp,subsets,tile,coaddir,exposures,outf):
     '''
@@ -34,8 +33,48 @@ def comb_subset_vert(tarbit,tp,subsets,tile,coaddir,exposures,outf):
         print('no data for tile '+tile)
         return False
 
+def comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outf):
+    '''
+    for now, only works if there is a "deep" subset
+    performs a horizontal concatenation of the data for a tile, so each targetid shows up once
+    subsets is a list of the subsets (strings)
+    tile is the particular tile (string)
+    coaddir is where the data comes from (string; e.g., the directory pointing to the Blanc release)
+    exposures is the file containing the information per exposure, used to get depth information (data array read by, e.g., fitsio)
+    outf is where the fits file gets written out (string)
+    '''
+    night = "deep"
+    tspect = get_subset(tarbit,tp,night,tile,coaddir,exposures,nspec=9)
+    tspect.sort('TARGETID')
+    nu = night
+    tt = tspect['TARGETID']
+    zbest_all = []
+    zbest_all.append(tspect)
 
-def get_subset(tarbit,tp,night,tile,coaddir,exposures):
+    for night in subsets:
+        if len(night) > 0 and night != nu:
+            tspec = get_subset(tarbit,tp,night,tile,coaddir,exposures)
+            tspecj = join(tt,tspec,keys=['TARGETID'], metadata_conflicts='silent',join_type='left') #get an entry for each TARGETID, though null for the missing ones
+            zbest_all.append(tspecj)
+    
+    print('subsets','number of subsets','len of table (should match)')
+    print(subsets,len(subsets),len(zbest_all))
+    
+    #below essentially copied from Rongpu's notebook
+    subsets = tspect[['TARGETID']].copy()
+    subset_columns = ['CHI2', 'Z', 'ZERR', 'ZWARN', 'SPECTYPE', 'DELTACHI2', 'FIBERSTATUS', 'subset']
+    for column in subset_columns:
+        subsets[column] = np.zeros((len(tspect), len(zbest_all)), dtype=tspect[column].dtype)
+        for subset_index, subset in enumerate(zbest_all):
+            subsets[column][:, subset_index] = subset[column]
+    n_subset = len(subsets['Z'][0])
+    print(len(subsets), len(np.unique(subsets['TARGETID'])))        
+    tspect.write(outf,format='fits', overwrite=True) 
+    print('wrote to '+outf)
+    return True
+
+
+def get_subset(tarbit,tp,night,tile,coaddir,exposures,nspec=2,md='all'):
 
     print('going through subset '+night)
     specs = []
@@ -50,7 +89,7 @@ def get_subset(tarbit,tp,night,tile,coaddir,exposures):
         except:
             #print(fl,specs,si)
             print('no spectrograph and/or coadd '+str(si)+ ' on subset '+night)
-    if len(specs) > 2: #basically required just to reject the one night with data from only 2 specs that was in exposures
+    if len(specs) > nspec: #basically required just to reject the one night with data from only 2 specs that was in exposures
         tspec = Table.read(coaddir+'/'+night+'/zbest-'+str(specs[0])+'-'+str(tile)+'-'+night+'.fits',hdu='ZBEST')
         tf = Table.read(coaddir+'/'+night+'/coadd-'+str(specs[0])+'-'+str(tile)+'-'+night+'.fits',hdu='FIBERMAP')
         #this is all to get the effective coadded exposure depth; should eventually just be in the fibermap hdu
@@ -83,7 +122,7 @@ def get_subset(tarbit,tp,night,tile,coaddir,exposures):
         for i in range(1,len(specs)):
             tn = Table.read(coaddir+'/'+night+'/zbest-'+str(specs[i])+'-'+str(tile)+'-'+night+'.fits',hdu='ZBEST')
             tnf = Table.read(coaddir+'/'+night+'/coadd-'+str(specs[i])+'-'+str(tile)+'-'+night+'.fits',hdu='FIBERMAP')  
-            tspec = vstack([tspec,tn])                      
+            tspec = vstack([tspec,tn], metadata_conflicts='silent')                      
             tf = vstack([tf,tnf])
             zfm = Table.read(coaddir+'/'+night+'/zbest-'+str(specs[i])+'-'+str(tile)+'-'+night+'.fits',hdu='FIBERMAP')
             exps = np.unique(zfm['EXPID'])
@@ -115,9 +154,10 @@ def get_subset(tarbit,tp,night,tile,coaddir,exposures):
             tid = np.concatenate([tid,tidn])
             #print(np.min(rdtn),np.max(rdtn)) 
             #print(np.min(rdt),np.max(rdt)) 
-        tspec = join(tspec,tf,keys=['TARGETID'])
-        td = Table([bdt,rdt,zdt,tid],names=('B_DEPTH','R_DEPTH','Z_DEPTH','TARGETID'))
-        tspec = join(tspec,td,keys=['TARGETID'])
+        if md == 'all':
+            tspec = join(tspec,tf,keys=['TARGETID'], metadata_conflicts='silent') #don't need the fibermap info again for horizontal
+        td = Table([bdt,rdt,zdt,tid],names=('B_DEPTH','R_DEPTH','Z_DEPTH','TARGETID'), metadata_conflicts='silent')
+        tspec = join(tspec,td,keys=['TARGETID'], metadata_conflicts='silent')
         wtype = ((tspec[tp] & 2**tarbit) > 0)
         print(str(len(tspec))+' total entries '+str(len(tspec[wtype]))+' that are requested type entries with '+str(len(np.unique(tspec[wtype]['TARGETID'])))+' unique target IDs')
         tspec = tspec[wtype]
