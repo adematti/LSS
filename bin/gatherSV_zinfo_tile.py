@@ -58,7 +58,8 @@ subsets = [x[0][len(coaddir):].strip('/') for x in os.walk(coaddir)] #something 
 svdir = '/project/projectdirs/desi/users/ajross/catalogs/SV/'
 version = 'test'
 dirout = svdir+'redshift_comps/'+release+'/'+version+'/'+type
-outf = dirout +'/'+tile+'_'+type+'zinfo.fits'
+outfv = dirout +'/'+tile+'_'+type+'zinfo.fits'
+outfh = dirout +'/'+tile+'_'+type+'zinfo_hstacked.fits'
 
 
 if not os.path.exists(svdir+'redshift_comps'):
@@ -80,5 +81,5 @@ if not os.path.exists(dirout):
 expf = '/global/cfs/cdirs/desi/users/raichoor/fiberassign-sv1/sv1-exposures.fits'  
 exposures = fitsio.read(expf) #this will be used in depth calculations    
 
-#zi.comb_subset_vert(tarbit,tp,subsets,tile,coaddir,exposures,outf)
-zi.comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outf)
+zi.comb_subset_vert(tarbit,tp,subsets,tile,coaddir,exposures,outfv)
+zi.comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outfh)
