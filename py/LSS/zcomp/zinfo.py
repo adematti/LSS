@@ -51,7 +51,8 @@ def comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outf):
     #print(tt.columns)
     zbest_all = []
     zbest_all.append(tspect)
-    print(tspect['subset'].dtype)
+    #print(tspect['subset'].dtype)
+    
 
     for night in subsets:
         if len(night) > 0 and night != nu:
@@ -66,7 +67,10 @@ def comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outf):
     subsets = tspect[['TARGETID']].copy()
     subset_columns = ['CHI2', 'Z', 'ZERR', 'ZWARN', 'SPECTYPE', 'DELTACHI2', 'FIBERSTATUS', 'subset']
     for column in subset_columns:
-        subsets[column] = np.zeros((len(tspect), len(zbest_all)), dtype=tspect[column].dtype)
+        dt=tspect[column].dtype
+        if dt == '<U4':
+            dt = '<U8'
+        subsets[column] = np.zeros((len(tspect), len(zbest_all)), dtype=dt)
         for subset_index, subset in enumerate(zbest_all):
             subsets[column][:, subset_index] = subset[column]
     n_subset = len(subsets['Z'][0])
