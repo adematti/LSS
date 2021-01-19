@@ -47,8 +47,8 @@ def comb_subset_hor(tarbit,tp,subsets,tile,coaddir,exposures,outf):
     tspect = get_subset(tarbit,tp,night,tile,coaddir,exposures,nspec=9)
     tspect.sort('TARGETID')
     nu = night
-    tt = tspect['TARGETID']
-    print(tt.columns)
+    tt = tspect[['TARGETID']].copy()
+    #print(tt.columns)
     zbest_all = []
     zbest_all.append(tspect)
 
